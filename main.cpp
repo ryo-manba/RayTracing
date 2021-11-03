@@ -4,17 +4,16 @@
 
 #include <iostream>
 
-// 𝑡^2𝐛⋅𝐛+2𝑡𝐛⋅(𝐀−𝐂)+(𝐀−𝐂)⋅(𝐀−𝐂)−𝑟^2=0
 double hit_sphere(const point3& center, double radius, const ray& r) {
 	vec3 oc = r.origin() - center; // 視点 - (0,0,-1) スクリーンの真ん中から視点に向かうベクトル
-	auto a = dot(r.direction(), r.direction()); // 𝐛⋅𝐛
-	auto b = 2.0 * dot(oc, r.direction()); // 2𝑡𝐛⋅(𝐀−𝐂),  oc=(A-C)
-	auto c = dot(oc, oc) - radius * radius; //(𝐀−𝐂)⋅(𝐀−𝐂)−𝑟^2
-	auto discriminant = b * b - 4 * a * c; // 解の公式のルートの中身
+	auto a = r.direction().length_squared();
+	auto half_b = dot(oc, r.direction());
+	auto c = oc.length_squared()- radius * radius;
+	auto discriminant = half_b * half_b - a * c; // 解の公式のルートの中身
 	if (discriminant < 0) // 球に触れてないとき
 		return -1.0;
 	else
-		return (-b - sqrt(discriminant)) / (2.0 * a); // 解の公式で求めた t の値 (-でtが小さい方)
+		return (-half_b - sqrt(discriminant)) / a; // 解の公式で求めた t の値 (-でtが小さい方)
 }
 
 color ray_color(const ray& r) {
