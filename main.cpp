@@ -4,39 +4,29 @@
 
 #include <iostream>
 
-// ((A - C) + tB) ･ ((A - C) + tB) = r^2
-// (A - C), tB
-// (A - C) ･ ((A - C) + tB), tB ･ ((A - C) + tB)
-// (A - C) ･ (A - C) + (A - C) ･ tB , tB ･ (A - C), tB ･ tB)
-// (A - C) ･ (A - C) + 2((A - C) ･　tB), t^2 * B ･ B = r^2
-// B ･ B * t^2 + 2((A - C) ･　tB) + (A - C) ･ (A - C) - r^2 = 0
-/*
-t = 2((A - C) ･ tB) * 2((A - C) ･ tB) - 4 * B ･ B * (A - C) ･ (A - C) - r^2
-a = B ･ B
-b = 2((A - C) ･ tB)
-c = (A - C) ･ (A - C) - r^2
-D = b * b - 4 * a * c
-
-t = (-b ± sqrt(D)) / (2 * a);
-*/
-
 // 𝑡^2𝐛⋅𝐛+2𝑡𝐛⋅(𝐀−𝐂)+(𝐀−𝐂)⋅(𝐀−𝐂)−𝑟^2=0
-bool hit_sphere(const point3& center, double radius, const ray& r) {
+double hit_sphere(const point3& center, double radius, const ray& r) {
 	vec3 oc = r.origin() - center; // 視点 - (0,0,-1) スクリーンの真ん中から視点に向かうベクトル
 	auto a = dot(r.direction(), r.direction()); // 𝐛⋅𝐛
-	auto b = 2.0 * dot(oc, r.direction()); // 2𝑡𝐛⋅(𝐀−𝐂), oc=(A-C)
+	auto b = 2.0 * dot(oc, r.direction()); // 2𝑡𝐛⋅(𝐀−𝐂),  oc=(A-C)
 	auto c = dot(oc, oc) - radius * radius; //(𝐀−𝐂)⋅(𝐀−𝐂)−𝑟^2
 	auto discriminant = b * b - 4 * a * c; // 解の公式のルートの中身
-	return (discriminant > 0); // 正の値なら貫いてる
-	// ぴったし0ならかすってる
+	if (discriminant < 0) // 球に触れてないとき
+		return -1.0;
+	else
+		return (-b - sqrt(discriminant)) / (2.0 * a); // 解の公式で求めた t の値 (-でtが小さい方)
 }
 
 color ray_color(const ray& r) {
-	if (hit_sphere(point3(0, 0, -1), 0.5, r))
-		return color(0, 1, 0);
+	auto t = hit_sphere(point3(0, 0, -1), 0.5, r);
+	if (t > 0.0)
+	{
+		vec3 N = unit_vector(r.at(t) - vec3(0, 0, -1)); // at=origin + t*direction
+		return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1); // スクリーン中心からレイと球の交点
+	}
 	// unit_vectorで方位ベクトルが求まる
 	vec3 unit_direction = unit_vector(r.direction());// r/r.length(sqrt(rx*rx, ry*ry, rz*rz))
-	auto t = 0.5 * (unit_direction.y() + 1.0); // 0.5*(高さ+1.0) ->上が1,下が0
+	t = 0.5 * (unit_direction.y() + 1.0); // 0.5*(高さ+1.0) ->上が1,下が0
 	return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0); // 白と水色のグラデーション
 	// (1.0 -t) 上が0,下が1に変化
 	// 1.0-t と t が重み
