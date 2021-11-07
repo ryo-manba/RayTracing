@@ -37,14 +37,21 @@ color ray_color(const ray& r) {
 }
 */
 
-color ray_color(const ray& r, const hittable& world) {
-	hit_record rec;
-	if (world.hit(r, 0, infinity, rec)) {
-		return 0.5 * (rec.normal + color(1, 1, 1));
-	}
-	vec3 unit_direction = unit_vector(r.direction());
-	auto t = 0.5 * (unit_direction.y() + 1.0);
-	return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0);
+color ray_color(const ray& r, const hittable& world, int depth) {
+    hit_record rec;
+
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0)
+        return color(0,0,0);
+
+    if (world.hit(r, 0, infinity, rec)) {
+        point3 target = rec.p + rec.normal + random_in_unit_sphere();
+        return 0.5 * ray_color(ray(rec.p, target - rec.p), world, depth-1);
+    }
+
+    vec3 unit_direction = unit_vector(r.direction());
+    auto t = 0.5*(unit_direction.y() + 1.0);
+    return (1.0-t)*color(1.0, 1.0, 1.0) + t*color(0.5, 0.7, 1.0);
 }
 
 
@@ -55,6 +62,7 @@ int main()
 	const int image_width = 400;
 	const int image_height = static_cast<int>(image_width / aspect_ratio);
 	const int samples_per_pixel = 100;
+	const int max_depth = 50;
 
 	// World
 	hittable_list world;
@@ -63,14 +71,6 @@ int main()
 
 	// Camera
 	camera cam;
-//	auto viewport_height = 2.0; // スクリーンの縦
-//	auto viewport_width = aspect_ratio * viewport_height; // 16.0/9.0*2.0 = 3.5555555555555554
-//	auto focal_length = 1.0; // 焦点距離
-
-//	auto origin = point3(0, 0, 0); // 視点
-//	auto horizontal = vec3(viewport_width, 0, 0); // 水平, x軸がviewport_width
-//	auto vertical = vec3(0, viewport_height, 0); // 垂直, y軸がviewport_height
-//	auto lower_left_corner = origin - horizontal / 2 - vertical / 2 - vec3(0, 0, focal_length); // z軸が焦点距離
 
 	// Render
 	std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
@@ -83,7 +83,7 @@ int main()
 				auto u = (i + random_double()) / (image_width - 1); // 見ている点の左からの距離
 				auto v = (j + random_double()) / (image_height - 1); // 見ている点の下からの距離
 				ray r = cam.get_ray(u, v); // 変化の大きさを求めるためにoriginを引いてる
-				pixel_color += ray_color(r, world);
+				pixel_color += ray_color(r, world, max_depth);
 			}
 			write_color(std::cout, pixel_color, samples_per_pixel);
 		}
