@@ -113,6 +113,7 @@ inline vec3 cross(const vec3 &u, const vec3 &v) {
 				u.e[0] * v.e[1] - u.e[1] * v.e[0]);
 }
 
+// 単位ベクトル
 inline vec3 unit_vector(vec3 v) {
 	return v / v.length();
 }
@@ -127,6 +128,14 @@ inline vec3 random_in_unit_sphere() {
 
 vec3 random_unit_vector() {
 	return unit_vector(random_in_unit_sphere());
+}
+
+vec3 random_in_hemisphere(const vec3& normal) {
+	vec3 in_unit_sphere = random_in_unit_sphere();
+	if (dot(in_unit_sphere, normal) > 0.0) // normalと同じ半球の場合
+		return in_unit_sphere;
+	else
+		return -in_unit_sphere;
 }
 
 #endif
