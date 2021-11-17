@@ -1,1 +1,1 @@
-# miniRT
+# RayTracing
